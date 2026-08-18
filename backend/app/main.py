@@ -12,6 +12,9 @@ responsibility is turning a result into a sentence.
 
 from __future__ import annotations
 
+import utils.http_session
+import utils.transport
+import utils.session
 import logging
 from contextlib import asynccontextmanager
 
@@ -120,6 +123,20 @@ async def chat(
     payload: ChatRequest, service: AssistantService = Depends(get_service)
 ) -> ChatResponse:
     return await service.answer(payload.user_id, payload.message)
+
+
+@app.delete("/api/v1/conversation", status_code=204)
+async def clear_conversation(
+    x_user_id: UserId = Header(..., alias="X-User-Id"),
+    service: AssistantService = Depends(get_service),
+) -> None:
+    """Forget the caller's Conversation.
+
+    Identity comes from the header rather than the body, matching the claims
+    endpoints: a caller can only ever clear their own thread. Idempotent, so a UI
+    may call it unconditionally without first asking whether a thread exists.
+    """
+    await service.forget(x_user_id)
 
 
 @app.get("/api/v1/claims", response_model=list[Claim])

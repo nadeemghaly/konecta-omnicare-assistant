@@ -166,6 +166,28 @@ def fetch_claims(user_id: str) -> list[dict]:
         return []
 
 
+def forget_conversation(user_id: str) -> None:
+    """Ask the backend to drop this Policyholder's thread.
+
+    Clearing the local transcript is not enough on its own. The agent's memory
+    lives in the backend checkpointer, so without this the next question is
+    answered from an exchange the user believes they erased -- and typically
+    without retrieving, since the policy text is still in context, which produces
+    an answer carrying no citations.
+
+    Best effort: if the backend is unreachable the local transcript still clears,
+    and the sidebar's backend pill already reports the connection.
+    """
+    try:
+        requests.delete(
+            f"{BACKEND_URL}/api/v1/conversation",
+            headers={"X-User-Id": user_id},
+            timeout=8,
+        )
+    except requests.RequestException:
+        pass
+
+
 def money(amount: float) -> str:
     return f"${amount:,.2f}"
 
@@ -389,6 +411,7 @@ with st.sidebar:
 
     st.markdown('<div class="eyebrow">Session</div>', unsafe_allow_html=True)
     if st.button("Clear conversation", use_container_width=True):
+        forget_conversation(user_id)
         st.session_state.pop(f"history::{user_id}", None)
         st.rerun()
 

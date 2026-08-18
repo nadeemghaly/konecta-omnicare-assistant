@@ -1,4 +1,3 @@
-.env
 .venv/
 __pycache__/
 *.py[cod]
@@ -17,3 +16,5 @@ __pycache__/
 # stays tracked -- WALKTHROUGH.md embeds those four, and the brief asks for a
 # markdown walkthrough with screenshots.
 /*.png
+config.bat
+node_modules
