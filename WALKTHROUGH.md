@@ -152,23 +152,33 @@ Hit during this very walkthrough, unscripted:
 
 ![Rate limit handled gracefully](screenshots/04-rate-limit-handled.png)
 
-> ⏳ I've hit the free-tier rate limit (5 requests per minute). Please try again in
-> about 30 seconds.
+> Free-tier quota reached. The daily cap on this model is 20 requests; the provider
+> suggests retrying in about 29 seconds, but if the daily cap is what ran out it
+> resets at midnight Pacific.
 
-The Gemini free tier allows **5 requests per minute**, and a tool-using turn spends
-two. The backend returns HTTP 503 with a `Retry-After` header and the parsed delay;
-the UI turns that into a human sentence with a countdown rather than showing a raw
-status code.
+The binding limit is **20 `generate_content` requests per day** on
+`gemini-3.6-flash` — measured, not estimated. Every 429 returns
+`quotaId: GenerateRequestsPerDayPerProjectPerModel-FreeTier, limit: 20`. A
+tool-using turn spends two, so budget roughly ten turns a day.
+
+The backend returns HTTP 503 with a `Retry-After` header and the parsed delay; the
+UI turns that into a sentence rather than showing a raw status code. Note the
+wording is careful about the retry value: Gemini sends a short `RetryInfo` even when
+the exhausted quota is the *daily* one, so it is offered as a hint, not a promise.
 
 This is why it matters that the failure was *designed for*: without it, a reviewer
-clicking through the demo sees a 500 and concludes the app is broken.
+clicking through the demo sees a 500 and concludes the app is broken. To keep going
+past the cap, set `LLM_PROVIDER=openai_compat` — embeddings bill against a separate,
+looser quota, so citations keep working.
 
 ---
 
 ## Recording script — 2 minutes
 
-Timings assume you pause ~15 seconds between questions to stay inside the rate limit;
-cut those gaps in the edit.
+Timings assume you pause ~15 seconds between questions to stay inside the per-minute
+limiter; cut those gaps in the edit. Check your remaining daily quota before
+recording — there are only 20 generation requests a day, and a full run of this
+script spends about half of them.
 
 | Time | On screen | Say |
 |---|---|---|
