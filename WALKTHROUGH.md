@@ -28,8 +28,13 @@ Three things worth noticing:
   trace. That's the untrusted-data envelope: text in there is reference material, never
   instructions.
 
-Only Section 1 is cited. The relevance filter dropped the Personal Property sentences
-that Chroma also returned — without it, a burst-pipe answer cites jewellery rules.
+Only Section 1 is cited, and *both* of its sentences are — the coverage clause and the
+exclusion. The relevance filter dropped the Theft sentence that Chroma also returned;
+without it, a burst-pipe answer cites the burglary rules.
+
+That the exclusion survives the filter is not luck. `relevance_margin` is measured
+against this corpus: the exclusion sits +0.1057 from the best hit and the first wrong
+section sits +0.1594, so the margin has to land between them. It is set to 0.13.
 
 ---
 
@@ -60,7 +65,7 @@ POL-1092 for $4,200."*
 The agent extracted all four required fields from one sentence, validated them through
 Pydantic, and filed the claim:
 
-- **Confirmation ID:** CLM-9015
+- **Confirmation ID:** CLM-9204
 - **Status:** Submitted
 
 The status is **Submitted**, not "Under Review" — the assistant records that a claim
@@ -71,7 +76,7 @@ an `asyncio.Lock` and an atomic temp-file replace:
 
 ```console
 $ python3 -c "import json; print([c['claim_id'] for c in json.load(open('data/mock_claims.json'))])"
-['CLM-8821', 'CLM-9014', 'CLM-9015']
+['CLM-8821', 'CLM-9014', ..., 'CLM-9203', 'CLM-9204']
 ```
 
 ---
@@ -173,11 +178,12 @@ cut those gaps in the edit.
 | **0:40–0:58** | Ask *"I've had a slow leak under my sink for months. Is that covered?"* | "This is the one I care about. The user wants a yes. The policy excludes gradual leaks, and it says no — and cites the exclusion. An ungrounded assistant hedges here." |
 | **0:58–1:20** | Ask to file a $4,200 claim on POL-1092. Show confirmation. Show `mock_claims.json` | "It pulls all four fields out of one sentence, validates them, and files the claim. Status is 'Submitted', not 'Under Review' — we record that a claim arrived, we never imply an assessment nobody made. And it's persisted." |
 | **1:20–1:45** | Terminal: the two `curl` 404s side by side. Then switch user to Marcus, ask CLM-9014 | "The brief passes a user_id and never uses it. Left alone, that's an IDOR — anyone reads any claim by guessing an ID. So claims are ownership-scoped. And the refusals are byte-identical: a claim that isn't yours looks exactly like one that doesn't exist, so you can't probe for which IDs are real. Switch to the owner, and it's there." |
-| **1:45–2:00** | Terminal: `uv run pytest` going green | "Ninety-six tests, a second and a half, no API key needed — the model is injected through the same seam that gives us a backup provider. Because Gemini 3 ignores temperature, asserting tool choice against the live model would be flaky; there's a separate opt-in live suite for the real integration." |
+| **1:45–2:00** | Terminal: `uv run pytest` going green | "A hundred and one tests, under two seconds, no API key needed — the model is injected through the same seam that gives us a backup provider. Because Gemini 3 ignores temperature, asserting tool choice against the live model would be flaky; there's a separate opt-in live suite for the real integration." |
 
 **Recording notes**
 
 - Pre-warm the stack — the first request pays the Chroma ingest.
-- Reset `data/mock_claims.json` to its two seeded records first, so CLM-9015 is created
-  on camera.
+- Reset `data/mock_claims.json` to its 14 seeded records first, so CLM-9204 is created
+  on camera. `submit_claim` mints `max + 1`, so the confirmation id depends on what is
+  already in the file.
 - Leave the rate-limit message in if you hit it. It shows the failure is handled.

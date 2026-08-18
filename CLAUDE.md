@@ -22,7 +22,7 @@ docker compose up --build           # backend :8000, frontend :8501
 # Backend dev
 cd backend
 uv sync --extra dev
-uv run pytest                       # 96 hermetic tests, ~1.5s, no key, no network
+uv run pytest                       # 101 hermetic tests, ~1.5s, no key, no network
 uv run pytest -m live               # 5 real-API tests; auto-skip without a key
 uv run pytest tests/test_rag.py::test_irrelevant_chunks_are_filtered_out   # single test
 uv run uvicorn app.main:app --reload
@@ -75,9 +75,11 @@ request because tools close over the caller's identity; **the checkpointer must 
 - **Streamlit renders paired `$` as LaTeX.** Every currency amount must go through
   `md()` in `frontend/app.py`, or "$25,000 with a $500 deductible" renders as a maths
   block.
-- **`relevance_margin` (0.10) is measured, not arbitrary.** It was tuned against real
+- **`relevance_margin` (0.13) is measured, not arbitrary.** It is tuned against real
   `gemini-embedding-001` distances; the first guess of 0.25 filtered nothing. Changing
-  embedder or dimensions invalidates it — re-measure rather than adjusting by feel.
+  embedder, dimensions, **or the policy document** invalidates it — re-measure rather
+  than adjusting by feel. `config.py` records the measurement that produced the current
+  value, including the window it has to sit inside.
 - **Identity is never a tool parameter.** Tools close over `user_id`. Adding it as an
   argument would let a prompt injection name another policyholder; a test asserts it is
   absent from every tool schema.
@@ -89,10 +91,18 @@ request because tools close over the caller's identity; **the checkpointer must 
 
 - New claims are always `Submitted`. Status is not caller-supplied; the assistant
   records that a claim arrived and never implies an adjudication.
-- `data/sample_policy.md` and `data/mock_claims.json` are the brief's fixtures and stay
-  byte-for-byte as provided. `data/mock_users.json` is an addition — see
-  `docs/adr/0002-ownership-based-authorization.md`.
-- Reset `data/mock_claims.json` to its two seeded records before recording a demo;
-  `submit_claim` appends to it through the mounted volume.
+- The fixtures have been **extended, not rewritten**. `data/sample_policy.md` keeps the
+  brief's Sections 1–2 byte-for-byte and adds Sections 3–7; `data/mock_claims.json`
+  keeps `CLM-8821` and `CLM-9014` and adds twelve more; `data/mock_users.json` is an
+  addition throughout — see `docs/adr/0002-ownership-based-authorization.md`.
+- Growing the fixtures has two consequences that are easy to miss. Adding policy text
+  invalidates the measured `relevance_margin`. Adding claims moves the id
+  `submit_claim` mints next, so keep the highest seeded id well below `CLM-9999` —
+  `ClaimId` is `^CLM-\d{4}$`, and `CLM-10000` would fail validation.
+- Seeded claim data is 14 records. Reset `data/mock_claims.json` to those before
+  recording a demo; `submit_claim` appends to it through the mounted volume.
+- Tests copy `data/` into a tmpdir, so they run against these files. Assert invariants
+  over the fixture ("never widens the policy set"), not its exact contents, or the
+  suite breaks every time the mock data grows.
 - ADRs live in `docs/adr/`. Add one only for decisions that are hard to reverse,
   surprising without context, and the result of a real trade-off.

@@ -49,6 +49,7 @@ async def test_a_user_cannot_file_a_claim_on_a_policy_they_do_not_hold(
     settings: Settings,
 ):
     dana = tools_for("usr_123", settings)
+    before = len(json.loads(settings.claims_path.read_text()))
     result = await dana["submit_claim"].ainvoke(
         {
             "policy_number": "POL-3341",
@@ -59,7 +60,7 @@ async def test_a_user_cannot_file_a_claim_on_a_policy_they_do_not_hold(
     )
     assert "isn't one of the policies" in result
     # And nothing was written.
-    assert len(json.loads(settings.claims_path.read_text())) == 2
+    assert len(json.loads(settings.claims_path.read_text())) == before
 
 
 async def test_a_multi_policy_holder_reaches_all_their_claims(settings: Settings):
@@ -92,8 +93,22 @@ def test_identity_is_not_a_tool_parameter(settings: Settings):
 
 
 def test_listing_claims_never_widens_the_policy_set(settings: Settings):
-    """The repository filters on the caller's policies and nothing else."""
+    """The repository filters on the caller's policies and nothing else.
+
+    Asserted as an invariant over whatever the fixture holds, rather than against a
+    fixed claim list: the guarantee is "never widens", and that must survive the
+    mock data growing.
+    """
     repo = ClaimsRepository(settings)
-    assert [c.claim_id for c in repo.for_policies({"POL-1092"})] == ["CLM-8821"]
+    every_policy = {c.policy_number for c in repo.all()}
+
+    for held in ({"POL-1092"}, {"POL-1092", "POL-3341"}, every_policy):
+        returned = repo.for_policies(held)
+        assert returned, f"fixture should hold claims on {held}"
+        assert {c.policy_number for c in returned} <= held
+
     assert [c.claim_id for c in repo.for_policies(set())] == []
-    assert len(repo.for_policies({"POL-1092", "POL-3341"})) == 2
+
+    # Claims outside the requested set are genuinely withheld, not merely reordered.
+    one_policy = {c.claim_id for c in repo.for_policies({"POL-1092"})}
+    assert one_policy < {c.claim_id for c in repo.all()}

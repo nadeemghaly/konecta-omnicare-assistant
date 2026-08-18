@@ -39,6 +39,12 @@ Option 1. Add `data/mock_users.json` mapping each policyholder to the policies t
 hold. The two provided fixtures — `sample_policy.md` and `mock_claims.json` — remain
 byte-for-byte unchanged; the addition is purely additive.
 
+> **Later amendment.** The fixtures were subsequently extended to give the demo more
+> depth: `sample_policy.md` gained Sections 3–7 and `mock_claims.json` gained twelve
+> more claims across four new policies. The brief's original content is still present
+> unmodified — the growth is additive — but "byte-for-byte unchanged" now describes
+> only the original sections and the two original claims, not the whole file.
+
 Three properties make the enforcement real rather than nominal:
 
 **Ownership lives in the repository.** `ClaimsRepository.get_owned()` takes the

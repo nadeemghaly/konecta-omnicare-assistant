@@ -10,5 +10,17 @@
   "usr_789": {
     "name": "Priya Raghunathan",
     "policy_numbers": ["POL-1092", "POL-3341"]
+  },
+  "usr_234": {
+    "name": "Elena Vasquez",
+    "policy_numbers": ["POL-4417"]
+  },
+  "usr_567": {
+    "name": "Tomas Okonkwo",
+    "policy_numbers": ["POL-5528", "POL-6113"]
+  },
+  "usr_890": {
+    "name": "Aiko Tanaka",
+    "policy_numbers": ["POL-7290"]
   }
 }
