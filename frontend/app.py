@@ -29,6 +29,12 @@ from theme import CSS
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
 REQUEST_TIMEOUT = 120  # Thinking models plus tool rounds can be slow.
 
+# Mirrors wrap_untrusted() in backend/app/agent/safety.py. The backend fences
+# retrieved policy text so the model treats it as data rather than instructions.
+# That envelope is a real control, but it is plumbing -- shown here as a labelled
+# block rather than as raw sentinel strings.
+EXCERPT_FENCE = "<<<POLICY_EXCERPT>>>"
+
 # Mirrors data/mock_users.json. Kept here rather than fetched so the UI still
 # renders when the backend is down.
 POLICYHOLDERS = {
@@ -120,6 +126,27 @@ def render_citations(sources: list[str]) -> None:
         )
 
 
+def render_result(result: str) -> str:
+    """Render a tool result, turning the untrusted-data fence into structure.
+
+    The raw `<<<POLICY_EXCERPT>>>` markers are what the model actually receives,
+    so the trace should still show that the text arrived quarantined -- but as a
+    labelled, dashed-rule block, not as sentinel strings a reader has to decode.
+    """
+    if EXCERPT_FENCE in result:
+        _, _, rest = result.partition(EXCERPT_FENCE)
+        payload, _, trailing = rest.rpartition(EXCERPT_FENCE)
+        body = (payload or trailing).strip()
+        return (
+            '<div class="envelope">'
+            '<div class="envelope-label">Retrieved policy text · passed to the '
+            "model as data, never as instructions</div>"
+            f'<div class="envelope-body">{block(body)}</div>'
+            "</div>"
+        )
+    return f'<div class="trace-out">{block(result)}</div>'
+
+
 def render_trace(tool_calls: list[dict]) -> None:
     """Diagnostic, so it stays collapsed and quiet."""
     if not tool_calls:
@@ -132,7 +159,7 @@ def render_trace(tool_calls: list[dict]) -> None:
             st.markdown(
                 f'<div class="trace-row">{mark} {html.escape(call["name"])}</div>'
                 f'<div class="trace-args">{html.escape(args)}</div>'
-                f'<div class="trace-out">{block(str(call.get("result"))[:600])}</div>',
+                + render_result(str(call.get("result"))[:600]),
                 unsafe_allow_html=True,
             )
 

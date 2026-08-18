@@ -228,6 +228,25 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {{
   margin-bottom: .5rem;
 }}
 
+/* The untrusted-data envelope. Dashed rather than solid, and grey rather than
+   oxblood, so it reads as "quarantined" and cannot be confused with a clause the
+   answer was grounded in. */
+.envelope {{
+  border-left: 1px dashed var(--ink-40);
+  background: var(--paper);
+  padding: .4rem 0 .45rem .6rem;
+  margin: .15rem 0 .5rem;
+}}
+.envelope-label {{
+  font-family: 'IBM Plex Mono', monospace; font-size: .565rem;
+  letter-spacing: .11em; text-transform: uppercase;
+  color: var(--ink-40); margin-bottom: .3rem; line-height: 1.4;
+}}
+.envelope-body, .envelope-body * {{
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .7rem; color: var(--ink-60); line-height: 1.55;
+}}
+
 /* ---- Notices ---------------------------------------------------------- */
 .notice {{
   border: 1px solid var(--rule); border-left: 2px solid var(--amber);
