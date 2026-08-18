@@ -46,8 +46,15 @@ CSS = f"""
 }}
 
 /* ---- Streamlit chrome ------------------------------------------------- */
-[data-testid="stToolbar"], [data-testid="stDecoration"],
-[data-testid="stStatusWidget"], footer {{ display: none !important; }}
+/* stToolbar is deliberately NOT in this list. Streamlit renders the sidebar's
+   reopen chevron (stExpandSidebarButton) inside the toolbar, so hiding the
+   container collapses that button to 0x0 and strands anyone who collapses the
+   sidebar -- there is no other way back. `toolbarMode = "minimal"` in
+   .streamlit/config.toml already strips the hamburger and Deploy chrome, and
+   Streamlit omits the toolbar entirely while the sidebar is open, so leaving
+   it visible costs nothing. */
+[data-testid="stDecoration"], [data-testid="stStatusWidget"],
+footer {{ display: none !important; }}
 /* Heading anchor links -- the little chain icon beside the wordmark. */
 .stMarkdown a[href^="#"] svg, h1 a, h2 a, h3 a {{ display: none !important; }}
 [data-testid="stAppViewContainer"] {{ background: var(--paper); }}
@@ -74,6 +81,21 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {{
   border-right: 1px solid var(--rule);
 }}
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{ gap: .6rem; }}
+
+/* The way back in, once the sidebar is collapsed. Sits in the transparent
+   header at the top-left. Muted until hovered, so it reads as a mark in the
+   margin rather than app chrome. The icon span carries Streamlit's Material
+   Symbols ligature font, so colour it directly and leave font-family alone --
+   overriding that renders the glyph as the literal text "keyboard_double_arrow_right". */
+[data-testid="stExpandSidebarButton"],
+[data-testid="stExpandSidebarButton"] [data-testid="stIconMaterial"] {{
+  color: var(--ink-40) !important;
+  transition: color .12s ease;
+}}
+[data-testid="stExpandSidebarButton"]:hover,
+[data-testid="stExpandSidebarButton"]:hover [data-testid="stIconMaterial"] {{
+  color: var(--teal) !important;
+}}
 
 .wordmark {{
   display: flex; align-items: baseline; gap: .5rem;
