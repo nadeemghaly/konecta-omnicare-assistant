@@ -102,6 +102,65 @@ async def test_conversations_do_not_leak_between_policyholders(service):
     assert not any("CLM-8821" in str(m.content) for m in model.calls[1])
 
 
+async def test_clearing_a_conversation_drops_the_agents_memory(service):
+    """The UI's "Clear conversation" must reach the checkpointer.
+
+    Clearing only the frontend transcript left the agent holding the exchange, so
+    the next turn answered from context the user thought they had erased -- and
+    skipped retrieval, returning an answer with no citations.
+    """
+    model = script(
+        service,
+        AIMessage(content="Your claim CLM-8821 is approved."),
+        AIMessage(content="Hello again."),
+    )
+    await service.answer("usr_123", "Status of CLM-8821?")
+    await service.forget("usr_123")
+    await service.answer("usr_123", "Hi")
+
+    assert not any("CLM-8821" in str(m.content) for m in model.calls[1])
+
+
+async def test_clearing_restarts_the_conversation_rather_than_muting_it(service):
+    """A cleared thread is new, not empty: the system prompt is sent again.
+
+    Without this the agent would answer the next question with no instructions at
+    all, which is a subtler failure than remembering too much.
+    """
+    model = script(service, AIMessage(content="One"), AIMessage(content="Two"))
+    await service.answer("usr_123", "first")
+    await service.forget("usr_123")
+    await service.answer("usr_123", "second")
+
+    system_messages = [
+        m for m in model.calls[1] if m.__class__.__name__ == "SystemMessage"
+    ]
+    assert len(system_messages) == 1
+
+
+async def test_clearing_one_conversation_leaves_another_intact(service):
+    """Forgetting is per-Policyholder, exactly as continuity is."""
+    model = script(
+        service,
+        AIMessage(content="Dana's claim is approved."),
+        AIMessage(content="Marcus is asking about CLM-9014."),
+        AIMessage(content="Still here."),
+    )
+    await service.answer("usr_123", "Status of CLM-8821?")
+    await service.answer("usr_456", "Status of CLM-9014?")
+    await service.forget("usr_123")
+    await service.answer("usr_456", "And what was that amount?")
+
+    # Marcus's thread survived Dana's clear.
+    assert any("CLM-9014" in str(m.content) for m in model.calls[2])
+
+
+async def test_clearing_an_unstarted_conversation_is_harmless(service):
+    """Idempotent, so the UI can call it without asking whether a thread exists."""
+    await service.forget("usr_123")
+    await service.forget("usr_123")
+
+
 async def test_the_system_prompt_is_sent_once_per_conversation(service):
     model = script(service, AIMessage(content="One"), AIMessage(content="Two"))
     await service.answer("usr_123", "first")

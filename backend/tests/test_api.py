@@ -156,6 +156,21 @@ def test_rest_requires_an_identity_header(client):
     assert client.get("/api/v1/claims/CLM-8821").status_code == 422
 
 
+def test_rest_clear_conversation_succeeds_and_is_idempotent(client):
+    """Called unconditionally by the UI, so a second call must not error."""
+    for _ in range(2):
+        response = client.delete(
+            "/api/v1/conversation", headers={"X-User-Id": "usr_123"}
+        )
+        assert response.status_code == 204
+
+
+def test_rest_clear_conversation_requires_an_identity_header(client):
+    """Identity comes from the header, so a caller can only clear their own
+    thread -- there is no body field naming whose conversation to drop."""
+    assert client.delete("/api/v1/conversation").status_code == 422
+
+
 def test_rest_list_returns_only_the_callers_claims(client):
     """Scoped by the same ownership rule as the single read, so the list cannot be
     used to enumerate the whole table."""

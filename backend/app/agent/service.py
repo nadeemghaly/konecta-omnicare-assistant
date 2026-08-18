@@ -38,6 +38,25 @@ class AssistantService:
         # Shared across requests: this is what makes a Conversation a conversation.
         self._checkpointer = MemorySaver()
 
+    async def forget(self, user_id: str) -> None:
+        """Discard a Policyholder's Conversation.
+
+        The checkpointer is keyed on `user_id`, so a UI that clears only its own
+        transcript leaves the agent holding the whole exchange. The next turn then
+        answers from context the user believes they erased -- and, worse, answers
+        *without retrieving*, because the policy text is already in the thread. The
+        result is an answer with no citations, which reads as the citation feature
+        being unreliable rather than as memory working.
+
+        Forgetting is per-Policyholder for the same reason continuity is
+        (CONTEXT.md): the thread id is the caller's own id, so this cannot reach
+        another Policyholder's Conversation.
+
+        Idempotent -- clearing a thread that was never started is a success, since
+        the caller's intent is satisfied either way.
+        """
+        await self._checkpointer.adelete_thread(user_id)
+
     async def answer(self, user_id: str, message: str) -> ChatResponse:
         display_name = self.users.name_for(user_id)
         if display_name is None and not self.users.policies_for(user_id):
