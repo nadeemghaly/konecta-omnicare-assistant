@@ -28,8 +28,13 @@ Three things worth noticing:
   trace. That's the untrusted-data envelope: text in there is reference material, never
   instructions.
 
-Only Section 1 is cited. The relevance filter dropped the Personal Property sentences
-that Chroma also returned — without it, a burst-pipe answer cites jewellery rules.
+Only Section 1 is cited, and *both* of its sentences are — the coverage clause and the
+exclusion. The relevance filter dropped the Theft sentence that Chroma also returned;
+without it, a burst-pipe answer cites the burglary rules.
+
+That the exclusion survives the filter is not luck. `relevance_margin` is measured
+against this corpus: the exclusion sits +0.1057 from the best hit and the first wrong
+section sits +0.1594, so the margin has to land between them. It is set to 0.13.
 
 ---
 
