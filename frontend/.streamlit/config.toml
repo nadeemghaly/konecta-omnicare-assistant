@@ -1,0 +1,17 @@
+# Pinned rather than following the viewer's OS preference. The design direction is
+# paper-and-ink -- a document you can read a clause out of -- and it depends on a
+# warm light ground. Pinning also means every reviewer sees the identical interface.
+[theme]
+base = "light"
+primaryColor = "#1F5C55"
+backgroundColor = "#F7F4ED"
+secondaryBackgroundColor = "#FFFDF8"
+textColor = "#14201F"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"
+showErrorDetails = true
+
+[browser]
+gatherUsageStats = false

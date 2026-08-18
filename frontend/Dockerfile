@@ -8,7 +8,8 @@ ENV PYTHONUNBUFFERED=1 \
 COPY frontend/requirements.txt /srv/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY frontend/app.py /srv/app.py
+COPY frontend/app.py frontend/theme.py /srv/
+COPY frontend/.streamlit /srv/.streamlit
 
 EXPOSE 8501
 
