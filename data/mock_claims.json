@@ -12,5 +12,89 @@
     "claim_type": "Personal Property",
     "status": "Under Review",
     "amount": 1200.0
+  },
+  {
+    "claim_id": "CLM-8904",
+    "policy_number": "POL-1092",
+    "claim_type": "Personal Property",
+    "status": "Approved",
+    "amount": 780.0
+  },
+  {
+    "claim_id": "CLM-9088",
+    "policy_number": "POL-1092",
+    "claim_type": "Theft",
+    "status": "Submitted",
+    "amount": 2150.0
+  },
+  {
+    "claim_id": "CLM-8756",
+    "policy_number": "POL-3341",
+    "claim_type": "Water Damage",
+    "status": "Approved",
+    "amount": 5400.0
+  },
+  {
+    "claim_id": "CLM-9121",
+    "policy_number": "POL-3341",
+    "claim_type": "Personal Liability",
+    "status": "Under Review",
+    "amount": 8000.0
+  },
+  {
+    "claim_id": "CLM-8612",
+    "policy_number": "POL-4417",
+    "claim_type": "Theft",
+    "status": "Approved",
+    "amount": 3300.0
+  },
+  {
+    "claim_id": "CLM-9155",
+    "policy_number": "POL-4417",
+    "claim_type": "Temporary Living Expenses",
+    "status": "Submitted",
+    "amount": 1875.0
+  },
+  {
+    "claim_id": "CLM-8998",
+    "policy_number": "POL-5528",
+    "claim_type": "Personal Property",
+    "status": "Under Review",
+    "amount": 640.0
+  },
+  {
+    "claim_id": "CLM-8433",
+    "policy_number": "POL-6113",
+    "claim_type": "Water Damage",
+    "status": "Approved",
+    "amount": 12500.0
+  },
+  {
+    "claim_id": "CLM-9176",
+    "policy_number": "POL-6113",
+    "claim_type": "Personal Liability",
+    "status": "Submitted",
+    "amount": 4500.0
+  },
+  {
+    "claim_id": "CLM-9042",
+    "policy_number": "POL-7290",
+    "claim_type": "Temporary Living Expenses",
+    "status": "Under Review",
+    "amount": 2600.0
+  },
+  {
+    "claim_id": "CLM-8877",
+    "policy_number": "POL-7290",
+    "claim_type": "Personal Property",
+    "status": "Approved",
+    "amount": 1490.0
+  },
+  {
+    "claim_id": "CLM-9203",
+    "policy_number": "POL-7290",
+    "claim_type": "Theft",
+    "status": "Submitted",
+    "amount": 950.0
   }
 ]

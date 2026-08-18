@@ -35,7 +35,7 @@ billing account.
 **No key? You can still verify the build.** The test suite is fully hermetic:
 
 ```bash
-cd backend && uv sync --extra dev && uv run pytest    # 96 tests, ~1.5s, no network
+cd backend && uv sync --extra dev && uv run pytest    # 101 tests, ~1.5s, no network
 ```
 
 ---
@@ -177,7 +177,7 @@ curl -i -H 'X-User-Id: usr_123' localhost:8000/api/v1/claims/CLM-9014
 curl -X POST localhost:8000/api/v1/claims \
   -H 'X-User-Id: usr_123' -H 'Content-Type: application/json' \
   -d '{"policy_number":"POL-1092","claim_type":"Water Damage","amount":4200,"description":"Burst pipe"}'
-# 201 · {"confirmation_id":"CLM-9015","status":"Submitted"}
+# 201 · {"confirmation_id":"CLM-9204","status":"Submitted"}
 ```
 
 ---
@@ -215,7 +215,7 @@ used. A reviewer can verify any answer by eye.
 
 Retrieval returns `k` nearest neighbours whether or not they're relevant, which on a
 four-sentence corpus meant a burst-pipe answer citing the Personal Property clause.
-A relevance filter (keep hits within `0.10` cosine distance of the best) fixes it.
+A relevance filter (keep hits within `0.13` cosine distance of the best) fixes it.
 **That margin is measured, not guessed** — against `gemini-embedding-001` at 768
 dimensions this corpus produces:
 
@@ -270,7 +270,7 @@ honest boundary of a JSON-file datastore; a real deployment uses a database.
 
 ```bash
 cd backend
-uv run pytest              # 96 hermetic tests, ~1.5s, no key, no network
+uv run pytest              # 101 hermetic tests, ~1.5s, no key, no network
 uv run pytest -m live      # 5 integration tests against the real Gemini API
 ```
 
@@ -303,7 +303,7 @@ Live tests self-throttle at 14s intervals to stay inside the 5 RPM quota.
 │   │   ├── llm/                 provider seam, scripted model, error classification
 │   │   ├── rag/                 chunker, embedders, Chroma store
 │   │   └── tools/               claim tools, repository (lock + atomic write)
-│   └── tests/                   96 hermetic + 5 live
+│   └── tests/                   101 hermetic + 5 live
 ├── frontend/app.py              Streamlit chat UI
 ├── data/                        sample_policy.md · mock_claims.json · mock_users.json
 ├── docs/adr/                    architecture decision records

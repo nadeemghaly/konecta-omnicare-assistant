@@ -41,22 +41,73 @@ POLICYHOLDERS = {
     "usr_123": ("Dana Whitfield", ["POL-1092"]),
     "usr_456": ("Marcus Adeyemi", ["POL-3341"]),
     "usr_789": ("Priya Raghunathan", ["POL-1092", "POL-3341"]),
+    "usr_234": ("Elena Vasquez", ["POL-4417"]),
+    "usr_567": ("Tomas Okonkwo", ["POL-5528", "POL-6113"]),
+    "usr_890": ("Aiko Tanaka", ["POL-7290"]),
 }
 
-# Grouped by the three things the assistant can actually do -- a real taxonomy,
-# not decorative numbering.
-STARTERS = {
-    "Coverage": [
-        "Is a burst pipe covered, and what is the deductible?",
-        "I've had a slow leak under my sink for months. Is that covered?",
-        "Is a $3,000 laptop covered, and do I need an appraisal?",
-    ],
-    "Claims": [
-        "What is the status of claim CLM-8821?",
-        "A pipe burst under my kitchen sink. Please file a water damage claim "
-        "on POL-1092 for $4,200.",
-    ],
+# One coverage question per Claim Type, so a holder is offered the clause that
+# bears on what they have actually claimed for. Each maps to a section of the
+# Policy Document.
+COVERAGE_BY_CLAIM_TYPE = {
+    "Water Damage": "Is a burst pipe covered, and what is the deductible?",
+    "Personal Property": "Is a $3,000 laptop covered, and do I need an appraisal?",
+    "Theft": "Someone broke in and stole my bike. What do I need to file a theft claim?",
+    "Personal Liability": "If my dog bites a visitor, am I covered for their injury?",
+    "Temporary Living Expenses": (
+        "My home is unlivable after a fire. Will you cover a hotel?"
+    ),
 }
+
+# Shown when a holder's own claims do not suggest enough, in this order.
+FALLBACK_COVERAGE = [
+    "Is a burst pipe covered, and what is the deductible?",
+    "I've had a slow leak under my sink for months. Is that covered?",
+    "How long do I have to report a claim?",
+]
+
+# A status lookup is most interesting on a claim that is still moving.
+STATUS_INTEREST = {"Under Review": 0, "Submitted": 1, "Approved": 2}
+
+
+def starters_for(policies: list[str], claims: list[dict]) -> dict[str, list[str]]:
+    """Opening prompts this Policyholder can actually run.
+
+    Claim prompts must be derived, not fixed: naming a Claim ID or Policy Number
+    the caller does not hold earns a refusal, and as a *suggested* prompt that
+    reads as a broken app rather than as ownership being enforced. Coverage
+    questions stay universal because the Policy Document is (CONTEXT.md), but
+    which ones are offered is steered by the Claim Types this holder has.
+
+    `claims` is empty when the backend is unreachable, so this degrades to the
+    fallback set rather than raising.
+    """
+    seen: list[str] = []
+    for claim_type in dict.fromkeys(c["claim_type"] for c in claims):
+        question = COVERAGE_BY_CLAIM_TYPE.get(claim_type)
+        if question and question not in seen:
+            seen.append(question)
+    for question in FALLBACK_COVERAGE:
+        if len(seen) >= 3:
+            break
+        if question not in seen:
+            seen.append(question)
+
+    claim_prompts: list[str] = []
+    if claims:
+        liveliest = sorted(claims, key=lambda c: STATUS_INTEREST.get(c["status"], 3))[0]
+        claim_prompts.append(f"What is the status of claim {liveliest['claim_id']}?")
+        if len(claims) > 1:
+            claim_prompts.append("Which of my claims are still open?")
+    else:
+        claim_prompts.append("Do I have any claims on file?")
+    if policies:
+        claim_prompts.append(
+            "A pipe burst under my kitchen sink. Please file a water damage "
+            f"claim on {policies[0]} for $4,200."
+        )
+
+    return {"Coverage": seen[:3], "Claims": claim_prompts}
 
 # Claim Status -> palette tone. Mirrors CONTEXT.md: Submitted is distinct from
 # Under Review on purpose, so it gets its own colour rather than sharing "pending".
@@ -352,7 +403,7 @@ if not history:
         "so you can check it yourself. You can also look up a claim, or file a new one.</div>",
         unsafe_allow_html=True,
     )
-    for group, prompts in STARTERS.items():
+    for group, prompts in starters_for(policies, claims).items():
         st.markdown(f'<div class="eyebrow">{group}</div>', unsafe_allow_html=True)
         for i, starter in enumerate(prompts):
             if st.button(starter, key=f"starter-{group}-{i}", use_container_width=True):

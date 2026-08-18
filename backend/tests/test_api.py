@@ -1,5 +1,7 @@
 """The HTTP surface, including the response contract the brief specifies."""
 
+import re
+
 from langchain_core.messages import AIMessage
 
 from tests.conftest import script, tool_call
@@ -114,7 +116,12 @@ def test_rest_post_files_a_claim(client):
         },
     )
     assert response.status_code == 201
-    assert response.json() == {"confirmation_id": "CLM-9015", "status": "Submitted"}
+    body = response.json()
+    # The contract is the shape -- a CLM-#### confirmation and a Submitted status.
+    # The exact number depends on the fixture size, so it is not asserted here.
+    assert set(body) == {"confirmation_id", "status"}
+    assert re.fullmatch(r"CLM-\d{4}", body["confirmation_id"])
+    assert body["status"] == "Submitted"
 
 
 def test_rest_post_rejects_a_policy_the_caller_does_not_hold(client):
@@ -153,12 +160,23 @@ def test_rest_list_returns_only_the_callers_claims(client):
     """Scoped by the same ownership rule as the single read, so the list cannot be
     used to enumerate the whole table."""
     body = client.get("/api/v1/claims", headers={"X-User-Id": "usr_123"}).json()
-    assert [c["claim_id"] for c in body] == ["CLM-8821"]
+    assert body, "usr_123 should hold at least one claim"
+    # Dana holds POL-1092 only, so every row must sit on it.
+    assert {c["policy_number"] for c in body} == {"POL-1092"}
+    # And a claim on someone else's policy is absent, however many rows there are.
+    assert "CLM-9014" not in {c["claim_id"] for c in body}
 
 
 def test_rest_list_shows_every_policy_a_holder_has(client):
-    body = client.get("/api/v1/claims", headers={"X-User-Id": "usr_789"}).json()
-    assert {c["claim_id"] for c in body} == {"CLM-8821", "CLM-9014"}
+    """Priya holds both policies, so she sees exactly the union of what the two
+    single-policy holders see -- no more, and nothing missing."""
+    dana = client.get("/api/v1/claims", headers={"X-User-Id": "usr_123"}).json()
+    marcus = client.get("/api/v1/claims", headers={"X-User-Id": "usr_456"}).json()
+    priya = client.get("/api/v1/claims", headers={"X-User-Id": "usr_789"}).json()
+
+    ids = lambda rows: {c["claim_id"] for c in rows}  # noqa: E731
+    assert ids(dana) and ids(marcus)
+    assert ids(priya) == ids(dana) | ids(marcus)
 
 
 def test_rest_list_is_empty_for_an_unknown_policyholder(client):

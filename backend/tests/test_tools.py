@@ -32,6 +32,9 @@ async def test_get_claim_status_returns_an_owned_claim(tools):
 async def test_submit_claim_persists_and_returns_a_confirmation_id(
     tools, settings: Settings
 ):
+    # Derived, not hardcoded: the id depends on how many claims the fixture holds,
+    # and pinning it would make this a test of the fixture rather than of submission.
+    expected_id = ClaimsRepository(settings).next_claim_id()
     result = await tools["submit_claim"].ainvoke(
         {
             "policy_number": "POL-1092",
@@ -40,18 +43,19 @@ async def test_submit_claim_persists_and_returns_a_confirmation_id(
             "description": "Burst pipe under the kitchen sink",
         }
     )
-    assert "CLM-9015" in result
+    assert expected_id in result
     assert "Submitted" in result
 
     stored = json.loads(settings.claims_path.read_text())[-1]
-    assert stored["claim_id"] == "CLM-9015"
+    assert stored["claim_id"] == expected_id
     assert stored["status"] == "Submitted"
     assert stored["amount"] == 4200.0
 
 
-async def test_a_submitted_claim_is_immediately_retrievable(tools):
+async def test_a_submitted_claim_is_immediately_retrievable(tools, settings: Settings):
     """The confirmation ID must be usable straight away, or the two tools disagree
     about what exists."""
+    new_id = ClaimsRepository(settings).next_claim_id()
     await tools["submit_claim"].ainvoke(
         {
             "policy_number": "POL-1092",
@@ -60,7 +64,7 @@ async def test_a_submitted_claim_is_immediately_retrievable(tools):
             "description": "Leak",
         }
     )
-    assert "Submitted" in await tools["get_claim_status"].ainvoke({"claim_id": "CLM-9015"})
+    assert "Submitted" in await tools["get_claim_status"].ainvoke({"claim_id": new_id})
 
 
 async def test_new_claims_are_never_created_pre_adjudicated(tools, settings: Settings):
@@ -124,12 +128,14 @@ async def test_unknown_claim_returns_the_uniform_message(tools):
 
 def test_claim_ids_increment_from_the_highest_existing(settings: Settings):
     repo = ClaimsRepository(settings)
-    assert repo.next_claim_id() == "CLM-9015"
+    highest = max(int(c.claim_id.split("-")[1]) for c in repo.all())
+    assert repo.next_claim_id() == f"CLM-{highest + 1:04d}"
 
 
 async def test_concurrent_submissions_do_not_lose_claims(settings: Settings):
     """Two writers exist (the agent tool and POST /api/v1/claims). A naive
     read-modify-write on a JSON array drops records when they interleave."""
+    seeded = len(json.loads(settings.claims_path.read_text()))
     repo = ClaimsRepository(settings)
     await asyncio.gather(
         *(
@@ -138,5 +144,5 @@ async def test_concurrent_submissions_do_not_lose_claims(settings: Settings):
         )
     )
     stored = json.loads(settings.claims_path.read_text())
-    assert len(stored) == 10  # 2 seeded + 8 appended
-    assert len({row["claim_id"] for row in stored}) == 10
+    assert len(stored) == seeded + 8
+    assert len({row["claim_id"] for row in stored}) == seeded + 8
