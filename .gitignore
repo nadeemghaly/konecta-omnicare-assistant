@@ -12,3 +12,8 @@ __pycache__/
 
 # Playwright MCP session artifacts
 .playwright-mcp/
+
+# Stray screenshots dropped at the repo root by tooling. `screenshots/` itself
+# stays tracked -- WALKTHROUGH.md embeds those four, and the brief asks for a
+# markdown walkthrough with screenshots.
+/*.png
