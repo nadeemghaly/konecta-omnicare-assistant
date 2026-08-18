@@ -71,6 +71,17 @@ def md(text: str) -> str:
     return str(text).replace("$", r"\$")
 
 
+def block(text: str) -> str:
+    """Escape text for injection into a custom HTML block, newlines included.
+
+    A blank line inside inline HTML *terminates the HTML block* in markdown, so
+    any text after it escapes the wrapping <div> and Streamlit wraps it in its own
+    <p> instead -- which our CSS cannot reach, and which renders at the body size
+    mid-block. Converting newlines to <br> keeps the whole thing one block.
+    """
+    return html.escape(str(text)).replace("\n", "<br>")
+
+
 def backend_health() -> tuple[bool, str]:
     try:
         response = requests.get(f"{BACKEND_URL}/api/v1/health", timeout=5)
@@ -121,7 +132,7 @@ def render_trace(tool_calls: list[dict]) -> None:
             st.markdown(
                 f'<div class="trace-row">{mark} {html.escape(call["name"])}</div>'
                 f'<div class="trace-args">{html.escape(args)}</div>'
-                f'<div class="trace-out">{html.escape(str(call.get("result"))[:600])}</div>',
+                f'<div class="trace-out">{block(str(call.get("result"))[:600])}</div>',
                 unsafe_allow_html=True,
             )
 
@@ -245,7 +256,7 @@ for turn in history:
         )
         if turn.get("notice"):
             st.markdown(
-                f'<div class="notice {turn["notice"]}">{html.escape(turn["content"])}</div>',
+                f'<div class="notice {turn["notice"]}">{block(turn["content"])}</div>',
                 unsafe_allow_html=True,
             )
         else:
@@ -275,7 +286,7 @@ if prompt:
         if payload.get("notice"):
             st.markdown(
                 f'<div class="notice {payload["notice"]}">'
-                f'{html.escape(payload["response"])}</div>',
+                f'{block(payload["response"])}</div>',
                 unsafe_allow_html=True,
             )
         else:

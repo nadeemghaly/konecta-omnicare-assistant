@@ -225,7 +225,7 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {{
 }}
 .trace-out {{
   border-left: 1px solid var(--rule); padding: .05rem 0 .05rem .55rem;
-  margin-bottom: .5rem; white-space: pre-wrap;
+  margin-bottom: .5rem;
 }}
 
 /* ---- Notices ---------------------------------------------------------- */
