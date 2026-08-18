@@ -97,7 +97,9 @@ async def provider_unavailable_handler(request: Request, exc: ProviderUnavailabl
     )
 
 
-@app.get("/api/v1/health", response_model=HealthResponse)
+# exclude_none so a healthy response is exactly {"status": "healthy"} as the
+# spec states, rather than carrying a null detail field.
+@app.get("/api/v1/health", response_model=HealthResponse, response_model_exclude_none=True)
 async def health(service: AssistantService = Depends(get_service)) -> HealthResponse:
     """Readiness, gated on the policy index.
 

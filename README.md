@@ -16,6 +16,11 @@ docker compose up --build
 
 Open **http://localhost:8501**.
 
+> The brief writes this as `docker-compose up`. Docker Compose v1 (the hyphenated
+> binary) is no longer shipped with Docker Desktop, so the modern equivalent is
+> `docker compose` — same file, same behaviour. Use `docker-compose up --build` if
+> you still have v1 installed.
+
 A free Gemini API key takes ~30 seconds at
 [aistudio.google.com/apikey](https://aistudio.google.com/apikey) — no card, no
 billing account.
@@ -40,7 +45,7 @@ cd backend && uv sync --extra dev && uv run pytest    # 96 tests, ~1.5s, no netw
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │  Streamlit UI  :8501                                                      │
-│  message history · citation expander · tool-call trace · user switcher    │
+│  message history · inline citations · tool-call trace · user switcher     │
 └───────────────────────────────┬──────────────────────────────────────────┘
                                 │  HTTP  POST /api/v1/chat
                                 ▼
@@ -126,7 +131,7 @@ your vendor. See [ADR-0001](docs/adr/0001-gemini-as-model-provider.md).
 ```bash
 # Health (also what compose gates the frontend on)
 curl localhost:8000/api/v1/health
-# {"status":"healthy","detail":null}
+# {"status":"healthy"}
 
 # Coverage question — RAG with citations
 curl -X POST localhost:8000/api/v1/chat \
