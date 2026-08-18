@@ -3,8 +3,17 @@
 A guided tour of the OmniCare assistant, with the screenshots each step produced.
 The recording script for the 2-minute video is at the end.
 
-Everything below was captured against the running Docker stack (`docker compose up`),
-talking to the real Gemini API.
+Everything below was captured against the running Docker stack (`docker compose up`).
+
+Steps 1 and 6 were captured with Gemini (`gemini-3.6-flash`), the default provider.
+Steps 2 and 3 were captured with the backup provider — Groq serving
+`openai/gpt-oss-120b` via the OpenAI-compatible adapter, set with
+`LLM_PROVIDER=openai_compat` — because Gemini's daily free-tier allowance was spent.
+Retrieval is identical either way: embeddings stay on Gemini regardless of which model
+generates the prose, so the citations below come from the same vector space.
+
+That the app survives a provider swap mid-walkthrough, with citations intact, is the
+point of the seam described in `docs/adr/0001-gemini-as-model-provider.md`.
 
 ---
 
@@ -44,26 +53,40 @@ section sits +0.1594, so the margin has to land between them. It is set to 0.13.
 
 ![Grounded refusal on an exclusion](screenshots/02-exclusion-grounded-refusal.png)
 
-> "No, a slow leak over several months is not covered. OmniCare policies strictly
-> exclude gradual leaks and flood damage."
+> "I'm sorry, but a slow, ongoing leak under your sink is considered a **gradual
+> leak**, and the policy states that "gradual leaks or flood damage are strictly
+> excluded." Therefore, this type of damage isn't covered under your home
+> water-damage coverage."
 
 This is the beat that matters most. The user clearly *wants* a yes, and an ungrounded
-assistant would hedge or agree. It says no, and cites the exclusion it relied on.
+assistant would hedge or agree. It says no, quotes the exclusion it relied on, and
+offers a human adjuster rather than leaving the user stuck.
 
 Note the citation ordering has flipped: the exclusion sentence is now the top hit,
-because retrieval is driven by the question rather than by a fixed script.
+because retrieval is driven by the question rather than by a fixed script. Section 7's
+"wear, tear, and ordinary deterioration are never covered" comes back as a third
+citation — a *months-long* leak is deterioration as much as it is a gradual leak, and
+that clause only exists because the policy document was extended.
 
 ---
 
 ## 3. Filing a claim
 
 **Asked:** *"A pipe burst under my kitchen sink. Please file a water damage claim on
-POL-1092 for $4,200."*
+POL-1092 for $4,200. Description: burst pipe under the kitchen sink."*
 
 ![Claim submission with confirmation ID](screenshots/03-claim-submission.png)
 
-The agent extracted all four required fields from one sentence, validated them through
-Pydantic, and filed the claim:
+`submit_claim` requires four fields, and the agent will not invent one it was not
+given: here it asked which claim type to file before proceeding, then filed once
+answered. That round-trip is the validation boundary doing its job — a missing field
+becomes a question, not a guess.
+
+Worth knowing this is model-dependent. Gemini tended to infer the claim type from the
+sentence and file in one turn; `gpt-oss-120b` asks. Both are correct, because neither
+can bypass the Pydantic schema on the way in.
+
+Once answered, it validated the arguments and filed:
 
 - **Confirmation ID:** CLM-9204
 - **Status:** Submitted
