@@ -1,0 +1,11 @@
+.git/
+.venv/
+backend/.venv/
+.chroma/
+**/__pycache__/
+**/*.py[cod]
+.pytest_cache/
+.env
+*.pdf
+docs/
+screenshots/

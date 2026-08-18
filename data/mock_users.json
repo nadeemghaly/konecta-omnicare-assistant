@@ -1,0 +1,14 @@
+{
+  "usr_123": {
+    "name": "Dana Whitfield",
+    "policy_numbers": ["POL-1092"]
+  },
+  "usr_456": {
+    "name": "Marcus Adeyemi",
+    "policy_numbers": ["POL-3341"]
+  },
+  "usr_789": {
+    "name": "Priya Raghunathan",
+    "policy_numbers": ["POL-1092", "POL-3341"]
+  }
+}

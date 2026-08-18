@@ -1,0 +1,55 @@
+services:
+  backend:
+    build:
+      # Context is the repo root so the image can see backend/ while data/ stays a
+      # mounted volume rather than being baked in.
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?set GEMINI_API_KEY in .env - see .env.example}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}
+      # Backup provider. Unset by default; one adapter serves OpenAI, Groq and Ollama.
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.groq.com/openai/v1}
+      OPENAI_MODEL: ${OPENAI_MODEL:-llama-3.3-70b-versatile}
+      DATA_DIR: /srv/data
+      CHROMA_DIR: /srv/.chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      # Writable: submit_claim appends to mock_claims.json, and a new claim must
+      # survive a restart for the demo to make sense.
+      - ./data:/srv/data
+      # Named volume, so the embedding work is paid once rather than on every start.
+      - chroma-index:/srv/.chroma
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - |
+          import urllib.request,sys,json
+          r=urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health',timeout=4)
+          sys.exit(0 if json.load(r)['status']=='healthy' else 1)
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 40s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      # Waits for the policy index to finish ingesting, so the first question
+      # cannot land on an empty index.
+      backend:
+        condition: service_healthy
+
+volumes:
+  chroma-index:
