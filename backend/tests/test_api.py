@@ -147,3 +147,26 @@ def test_rest_post_validates_the_amount(client):
 
 def test_rest_requires_an_identity_header(client):
     assert client.get("/api/v1/claims/CLM-8821").status_code == 422
+
+
+def test_rest_list_returns_only_the_callers_claims(client):
+    """Scoped by the same ownership rule as the single read, so the list cannot be
+    used to enumerate the whole table."""
+    body = client.get("/api/v1/claims", headers={"X-User-Id": "usr_123"}).json()
+    assert [c["claim_id"] for c in body] == ["CLM-8821"]
+
+
+def test_rest_list_shows_every_policy_a_holder_has(client):
+    body = client.get("/api/v1/claims", headers={"X-User-Id": "usr_789"}).json()
+    assert {c["claim_id"] for c in body} == {"CLM-8821", "CLM-9014"}
+
+
+def test_rest_list_is_empty_for_an_unknown_policyholder(client):
+    """Empty rather than an error: there is nothing to disclose either way."""
+    response = client.get("/api/v1/claims", headers={"X-User-Id": "usr_999"})
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_rest_list_requires_an_identity_header(client):
+    assert client.get("/api/v1/claims").status_code == 422

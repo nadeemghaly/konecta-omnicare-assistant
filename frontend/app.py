@@ -58,6 +58,10 @@ STARTERS = {
     ],
 }
 
+# Claim Status -> palette tone. Mirrors CONTEXT.md: Submitted is distinct from
+# Under Review on purpose, so it gets its own colour rather than sharing "pending".
+STATUS_TONE = {"Approved": "ok", "Under Review": "pending", "Submitted": "new"}
+
 st.set_page_config(
     page_title="OmniCare Assistant",
     page_icon="◍",
@@ -95,6 +99,44 @@ def backend_health() -> tuple[bool, str]:
         return payload.get("status") == "healthy", payload.get("detail") or "healthy"
     except requests.RequestException:
         return False, "unreachable"
+
+
+def fetch_claims(user_id: str) -> list[dict]:
+    """The caller's claims, for the sidebar. Empty on any failure -- the sidebar
+    must still render when the backend is down."""
+    try:
+        response = requests.get(
+            f"{BACKEND_URL}/api/v1/claims",
+            headers={"X-User-Id": user_id},
+            timeout=8,
+        )
+        return response.json() if response.status_code == 200 else []
+    except requests.RequestException:
+        return []
+
+
+def money(amount: float) -> str:
+    return f"${amount:,.2f}"
+
+
+def detail_rows(pairs: list[tuple[str, str]]) -> str:
+    return "".join(
+        f'<span class="tip-row"><span class="tip-key">{html.escape(k)}</span>'
+        f'<span class="tip-val">{html.escape(v)}</span></span>'
+        for k, v in pairs
+    )
+
+
+def info(details: str) -> str:
+    """An `i` affordance whose detail appears on hover or keyboard focus.
+
+    tabindex makes it reachable without a mouse; hover alone would hide the
+    detail from anyone navigating by keyboard.
+    """
+    return (
+        f'<span class="info" tabindex="0" aria-label="Details">i'
+        f'<span class="tip">{details}</span></span>'
+    )
 
 
 def split_source(source: str) -> tuple[str, str]:
@@ -229,16 +271,59 @@ with st.sidebar:
         label_visibility="collapsed",
     )
     name, policies = POLICYHOLDERS[user_id]
-    # The dropdown already names the person; repeating it here would be the card
-    # doing no work. It carries the policies instead -- which is what decides
-    # whose claims are visible.
-    st.markdown(
-        f'<div class="eyebrow">Policies held</div>'
-        f'<div class="holder"><div class="holder-policies">'
-        f'{"<br>".join(html.escape(p) for p in policies)}'
-        f"</div></div>",
-        unsafe_allow_html=True,
-    )
+    claims = fetch_claims(user_id)
+
+    # Policies. Each detail is derived from data we actually hold -- no invented
+    # policy metadata. Coverage limits live in the shared product document
+    # (CONTEXT.md: the Policy Document applies to every policyholder), so the
+    # per-policy detail is about this holder's activity on it.
+    st.markdown('<div class="eyebrow">Policies held</div>', unsafe_allow_html=True)
+    for policy in policies:
+        on_policy = [c for c in claims if c["policy_number"] == policy]
+        details = detail_rows(
+            [
+                ("Holder", name),
+                ("Claims filed", str(len(on_policy))),
+                ("Total claimed", money(sum(c["amount"] for c in on_policy))),
+            ]
+        ) + (
+            '<span class="tip-note">Coverage limits come from the shared OmniCare '
+            "product document, which applies to every policyholder.</span>"
+        )
+        st.markdown(
+            f'<div class="row">'
+            f'<span class="row-id">{html.escape(policy)}</span>{info(details)}'
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+    # Claims on file, scoped by the backend to policies this holder owns.
+    st.markdown('<div class="eyebrow">Claims on file</div>', unsafe_allow_html=True)
+    if not claims:
+        st.markdown(
+            '<div class="row-empty">No claims yet. Ask the assistant to file one.</div>',
+            unsafe_allow_html=True,
+        )
+    for claim in claims:
+        tone = STATUS_TONE.get(claim["status"], "pending")
+        details = detail_rows(
+            [
+                ("Claim", claim["claim_id"]),
+                ("Policy", claim["policy_number"]),
+                ("Type", claim["claim_type"]),
+                ("Status", claim["status"]),
+                ("Amount", money(claim["amount"])),
+            ]
+        )
+        st.markdown(
+            f'<div class="row">'
+            f'<span class="status-dot {tone}"></span>'
+            f'<span class="row-id">{html.escape(claim["claim_id"])}</span>'
+            f'<span class="row-meta">{html.escape(claim["status"])}</span>'
+            f"{info(details)}"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
 
     st.markdown('<div class="eyebrow">Backend</div>', unsafe_allow_html=True)
     healthy, detail = backend_health()
@@ -330,6 +415,12 @@ if prompt:
             "notice": payload.get("notice"),
         }
     )
-    # Re-run so the empty state disappears on the first message.
-    if len(history) == 2:
+    # Re-run when the empty state has to disappear (first message), or when a claim
+    # was just filed: the sidebar is rendered before this turn is processed, so a
+    # new claim would otherwise not show up until the next interaction.
+    filed = any(
+        call.get("name") == "submit_claim" and call.get("ok")
+        for call in payload.get("tool_calls", [])
+    )
+    if len(history) == 2 or filed:
         st.rerun()

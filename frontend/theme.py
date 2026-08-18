@@ -122,6 +122,82 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {{
 .pill.down {{ background: var(--seal-dim); color: var(--seal); }}
 .pill.down .dot {{ background: var(--seal); }}
 
+/* ---- Policy / claim rows, with hover detail --------------------------- */
+.row {{
+  display: flex; align-items: center; gap: .45rem;
+  padding: .34rem .5rem; border: 1px solid var(--rule);
+  border-left: 2px solid var(--teal); background: var(--paper);
+  border-radius: 0 2px 2px 0; margin-bottom: .3rem;
+}}
+.row-id {{
+  font-family: 'IBM Plex Mono', monospace; font-size: .72rem;
+  color: var(--ink); letter-spacing: .01em;
+}}
+.row-meta {{
+  font-family: 'IBM Plex Mono', monospace; font-size: .6rem;
+  color: var(--ink-40); letter-spacing: .06em; text-transform: uppercase;
+  margin-left: auto;
+}}
+.row-empty {{
+  font-size: .78rem; color: var(--ink-40); line-height: 1.45;
+  padding: .1rem 0 .2rem;
+}}
+.status-dot {{ width: .44rem; height: .44rem; border-radius: 50%; flex: none; }}
+.status-dot.ok      {{ background: var(--moss); }}
+.status-dot.pending {{ background: var(--amber); }}
+.status-dot.new     {{ background: var(--teal); }}
+
+/* The `i` and its panel. CSS-only: hover or keyboard focus reveals it, so it
+   works without a mouse and without JavaScript. */
+.info {{
+  position: relative; margin-left: auto; flex: none; cursor: help;
+  width: .92rem; height: .92rem; border-radius: 50%;
+  border: 1px solid var(--ink-40); color: var(--ink-40);
+  font-family: 'IBM Plex Mono', monospace; font-size: .58rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: border-color .12s ease, color .12s ease;
+}}
+.row-meta + .info {{ margin-left: .1rem; }}
+.info:hover, .info:focus-visible {{ border-color: var(--teal); color: var(--teal); }}
+.info:focus-visible {{ outline: 2px solid var(--teal); outline-offset: 2px; }}
+
+.tip {{
+  position: absolute; left: 50%; bottom: calc(100% + .45rem);
+  transform: translateX(-50%);
+  min-width: 13.5rem; max-width: 15rem; z-index: 999;
+  background: var(--surface); border: 1px solid var(--rule);
+  border-top: 2px solid var(--teal); border-radius: 2px;
+  padding: .5rem .6rem; text-align: left;
+  box-shadow: 0 6px 20px rgba(20, 32, 31, .13);
+  opacity: 0; visibility: hidden; transition: opacity .12s ease;
+  /* The panel opens upward and overlaps the row above it. Nothing inside is
+     clickable, so it must never intercept the cursor -- otherwise an open panel
+     blocks the neighbouring row's own `i`. */
+  pointer-events: none;
+}}
+.info:hover .tip, .info:focus .tip, .info:focus-visible .tip {{
+  opacity: 1; visibility: visible;
+}}
+.tip-row {{
+  display: flex; justify-content: space-between; gap: .6rem;
+  padding: .1rem 0; font-size: .68rem;
+}}
+.tip-key {{
+  font-family: 'IBM Plex Mono', monospace; font-size: .58rem;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-40);
+  white-space: nowrap;
+}}
+.tip-val {{ color: var(--ink); font-weight: 500; text-align: right; }}
+.tip-note {{
+  display: block; margin-top: .35rem; padding-top: .35rem;
+  border-top: 1px solid var(--rule);
+  font-size: .655rem; color: var(--ink-60); line-height: 1.45;
+}}
+/* Sidebar containers clip by default, which would cut the panel off. */
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"],
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+[data-testid="stSidebar"] > div {{ overflow: visible !important; }}
+
 /* ---- Empty state ------------------------------------------------------ */
 .lede {{
   font-family: 'Spectral', Georgia, serif;

@@ -89,3 +89,11 @@ def test_identity_is_not_a_tool_parameter(settings: Settings):
     ):
         schema = tool.args_schema.model_json_schema()
         assert "user_id" not in schema.get("properties", {})
+
+
+def test_listing_claims_never_widens_the_policy_set(settings: Settings):
+    """The repository filters on the caller's policies and nothing else."""
+    repo = ClaimsRepository(settings)
+    assert [c.claim_id for c in repo.for_policies({"POL-1092"})] == ["CLM-8821"]
+    assert [c.claim_id for c in repo.for_policies(set())] == []
+    assert len(repo.for_policies({"POL-1092", "POL-3341"})) == 2

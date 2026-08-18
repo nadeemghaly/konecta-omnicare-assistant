@@ -119,6 +119,21 @@ async def chat(
     return await service.answer(payload.user_id, payload.message)
 
 
+@app.get("/api/v1/claims", response_model=list[Claim])
+async def list_claims(
+    x_user_id: UserId = Header(..., alias="X-User-Id"),
+    service: AssistantService = Depends(get_service),
+) -> list[Claim]:
+    """Every claim on the caller's policies.
+
+    Scoped by the same ownership rule as the single-claim read, so this cannot be
+    used to enumerate the whole table. An unknown policyholder holds no policies
+    and therefore sees an empty list rather than an error -- there is nothing to
+    disclose either way.
+    """
+    return service.claims.for_policies(service.users.policies_for(x_user_id))
+
+
 @app.get("/api/v1/claims/{claim_id}", response_model=Claim)
 async def get_claim(
     claim_id: str,

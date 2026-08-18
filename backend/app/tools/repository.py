@@ -64,6 +64,14 @@ class ClaimsRepository:
     def all(self) -> list[Claim]:
         return self._read()
 
+    def for_policies(self, policy_numbers: set[str]) -> list[Claim]:
+        """Every claim on the given policies, newest id last.
+
+        Ownership is expressed the same way as get_owned: the caller passes the
+        policies it holds, and the repository never widens that set.
+        """
+        return [c for c in self._read() if c.policy_number in policy_numbers]
+
     def get_owned(self, claim_id: str, policy_numbers: set[str]) -> Claim:
         """Fetch a claim the caller owns, or raise ClaimNotFound.
 
