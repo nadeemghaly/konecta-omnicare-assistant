@@ -55,9 +55,18 @@ seam that enables the backup is the same seam the hermetic test suite injects a
 scripted model into — one abstraction, two payoffs.
 
 **Bad.** Gemini is not on the brief's list, so this needs explaining — hence this
-record. The free tier allows only **5 requests per minute**, and a single coverage
-question spends two of them; the app returns HTTP 503 with `Retry-After` rather than
-failing opaquely, but rapid demoing is not possible.
+record. The free tier allows only **20 generate_content requests per day** on
+`gemini-3.6-flash`, and a single coverage question spends two of them; the app
+returns HTTP 503 with `Retry-After` rather than failing opaquely, but sustained
+demoing is not possible on Gemini alone. This is the strongest argument for the
+backup provider below — it is not redundancy for its own sake, it is what keeps the
+app usable once the daily cap is gone.
+
+> **Amendment.** This ADR originally recorded the limit as 5 requests per minute.
+> That was wrong: every 429 observed carries
+> `quotaId: GenerateRequestsPerDayPerProjectPerModel-FreeTier, limit: 20`. The
+> constraint is roughly ten agent turns per day, which is materially tighter than
+> a per-minute cap and changes how the app should be demonstrated.
 
 **Deliberate asymmetry.** Generation falls back; embeddings do not. Two embedders
 produce different dimensions and different vector spaces, so querying an index built

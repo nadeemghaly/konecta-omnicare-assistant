@@ -278,12 +278,15 @@ def ask(user_id: str, message: str) -> dict:
         return response.json()
 
     if response.status_code == 503:
-        # The Gemini free tier allows 5 requests/minute. A raw status code here
-        # would read as a broken app rather than a quota to wait out.
+        # The binding free-tier quota is 20 generate_content requests per day per
+        # model, not a per-minute one -- so the provider's Retry-After is not
+        # something to promise the reader. A raw status code here would read as a
+        # broken app rather than a quota to wait out.
         wait = response.json().get("retry_after", 60)
         return {
-            "response": f"Free-tier rate limit reached — 5 requests per minute. "
-            f"Try again in about {wait} seconds.",
+            "response": "Free-tier quota reached. The daily cap on this model is 20 "
+            f"requests; the provider suggests retrying in about {wait} seconds, but "
+            "if the daily cap is what ran out it resets at midnight Pacific.",
             "sources": [],
             "tool_calls": [],
             "notice": "amber",
