@@ -1,7 +1,8 @@
 """Provider error classification.
 
-Discovered the hard way: the Gemini free tier caps at 5 requests per minute, so
-this path runs during any real demo and cannot be left as an unhandled 500.
+Discovered the hard way: the Gemini free tier caps gemini-3.6-flash at 20
+generate_content requests per day, so this path runs during any real demo and
+cannot be left as an unhandled 500.
 """
 
 import pytest

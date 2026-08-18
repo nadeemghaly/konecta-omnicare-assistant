@@ -25,12 +25,19 @@ A free Gemini API key takes ~30 seconds at
 [aistudio.google.com/apikey](https://aistudio.google.com/apikey) — no card, no
 billing account.
 
-> ### ⚠️ The free tier allows **5 requests per minute**
+> ### ⚠️ The free tier allows **20 requests per day** on this model
 >
-> A single coverage question spends two of them (one to choose the tool, one to
-> answer). Asking questions back-to-back **will** hit the quota. The app handles
-> this deliberately — HTTP 503 with `Retry-After`, and the UI says how long to
-> wait — but when demoing, pause a few seconds between questions.
+> Measured, not estimated: every 429 returns
+> `GenerateRequestsPerDayPerProjectPerModel-FreeTier, limit: 20` for
+> `gemini-3.6-flash`. A single coverage question spends two of them (one to choose
+> the tool, one to answer), so budget roughly **ten turns per day**.
+>
+> The app handles this deliberately — HTTP 503 with `Retry-After`, surfaced in the
+> UI rather than as a broken page. Note that the provider sends a short retry hint
+> even when the *daily* cap is what ran out; that one resets at midnight Pacific.
+>
+> To keep working past it, set `LLM_PROVIDER=openai_compat` and point it at Groq's
+> free tier. Embeddings stay on Gemini, against a separate and looser quota.
 
 **No key? You can still verify the build.** The test suite is fully hermetic:
 

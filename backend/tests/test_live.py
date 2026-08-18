@@ -33,9 +33,11 @@ pytestmark = [
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-# The free tier allows 5 generateContent requests per minute per model, and a
-# multi-turn tool call spends two of them. Pacing proactively is faster than
-# reacting to a 429, whose advertised retry delay is a full minute.
+# Pacing, so a burst of live tests does not trip the per-minute limiter. Note this
+# does NOT protect against the quota that actually bites: the free tier allows only
+# 20 generateContent requests per day per model, and a multi-turn tool call spends
+# two. Once that is gone, no amount of throttling helps and these tests will fail
+# until it resets -- run them deliberately, not on every change.
 THROTTLE_SECONDS = 14
 
 

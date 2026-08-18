@@ -71,10 +71,13 @@ async def unknown_policyholder_handler(request: Request, exc: UnknownPolicyholde
 
 @app.exception_handler(RateLimited)
 async def rate_limited_handler(request: Request, exc: RateLimited):
-    """The Gemini free tier permits 5 requests per minute, which a live demo will
-    reach. 503 with Retry-After is the honest signal -- the request was valid and
-    will succeed shortly -- and it keeps a transient quota problem out of the 500s,
-    where genuine faults live.
+    """The Gemini free tier caps gemini-3.6-flash at 20 generate_content requests
+    per day, which a live demo will reach. 503 with Retry-After is the honest
+    signal -- the request was valid -- and it keeps a quota problem out of the
+    500s, where genuine faults live.
+
+    Caveat worth knowing: the provider sends a short Retry-After even when the
+    *daily* quota is the exhausted one, so the hint can be far too optimistic.
     """
     return JSONResponse(
         status_code=503,

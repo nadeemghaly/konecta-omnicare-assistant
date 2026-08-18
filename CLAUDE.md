@@ -69,9 +69,14 @@ request because tools close over the caller's identity; **the checkpointer must 
 - **Gemini 3.x returns content as a list of blocks**, not a string. Always route model
   output through `message_text()` or Python reprs and thought signatures leak into the
   API response.
-- **Free tier is 5 requests/minute.** A tool-using turn spends two. Live tests
-  self-throttle at 14s; expect 429s when demoing. They surface as HTTP 503 with
-  `Retry-After` via `app/llm/errors.py`.
+- **Free tier is 20 generate_content requests per _day_** for `gemini-3.6-flash`
+  — measured, not the per-minute cap this file used to claim. Every 429 observed
+  carried `quotaId: GenerateRequestsPerDayPerProjectPerModel-FreeTier, limit: 20`.
+  A tool-using turn spends two of the twenty, so a demo session is about ten
+  turns. Embeddings bill against a separate, much looser quota. 429s surface as
+  HTTP 503 with `Retry-After` via `app/llm/errors.py`, but that hint is
+  unreliable for the daily cap: it resets at midnight Pacific, not in the ~30s
+  the provider suggests. Set `LLM_PROVIDER=openai_compat` to keep working.
 - **Streamlit renders paired `$` as LaTeX.** Every currency amount must go through
   `md()` in `frontend/app.py`, or "$25,000 with a $500 deductible" renders as a maths
   block.

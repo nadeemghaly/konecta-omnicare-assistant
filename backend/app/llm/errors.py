@@ -1,10 +1,16 @@
 """Provider error classification.
 
-The Gemini free tier allows 5 requests per minute per model. That is low enough
-that anyone demonstrating this app will hit it, so a 429 has to be a designed-for
-outcome rather than an unhandled 500. Classification is by message content because
-each provider raises its own exception type -- and the point of the provider seam
-is that nothing above it should have to know which vendor is behind it.
+The Gemini free tier caps gemini-3.6-flash at 20 generate_content requests per
+day (quotaId GenerateRequestsPerDayPerProjectPerModel-FreeTier). That is low
+enough that anyone demonstrating this app will hit it, so a 429 has to be a
+designed-for outcome rather than an unhandled 500. Classification is by message
+content because each provider raises its own exception type -- and the point of
+the provider seam is that nothing above it should have to know which vendor is
+behind it.
+
+Note on retry_after: Gemini returns a short RetryInfo delay even when the daily
+quota is the exhausted one, so the value parsed below is a lower bound rather
+than a promise. Callers should word it as a hint.
 """
 
 from __future__ import annotations
